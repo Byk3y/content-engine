@@ -1,26 +1,95 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-engine-orange: oklch(0.7 0.25 45);
+  --color-engine-yellow: oklch(0.9 0.1 100);
+  --color-engine-black: oklch(0.12 0.02 240);
+  --color-engine-gray: oklch(0.25 0.02 240);
+  --color-foreground: oklch(0.98 0.01 240);
+
+  --font-display: "Bebas Neue", sans-serif;
+  --font-mono: "Space Grotesk", monospace;
+  --font-body: "Space Grotesk", sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Base body styles — plain CSS avoids @apply + @theme conflicts in Tailwind v4 */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-engine-black);
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background-color: var(--color-engine-orange);
+  color: black;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+
+/* Component: Engine Card */
+.engine-card {
+  background-color: oklch(0.25 0.02 240 / 0.3);
+  border-left: 4px solid var(--color-engine-orange);
+  padding: 1.5rem;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 25px 50px -12px oklch(0 0 0 / 0.25);
+  transition: background-color 0.2s ease;
+}
+
+.engine-card:hover {
+  background-color: oklch(0.25 0.02 240 / 0.4);
+}
+
+/* Component: Status Tag */
+.status-tag {
+  padding: 0.125rem 0.5rem;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  border-radius: 0.125rem;
+}
+
+/* Component: Engine Button */
+.btn-engine {
+  position: relative;
+  padding: 1rem 2rem;
+  background-color: var(--color-engine-orange);
+  color: black;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  overflow: hidden;
+  transition: transform 0.15s ease;
+  clip-path: polygon(0 0, 100% 0, 100% 70%, 90% 100%, 0 100%);
+}
+
+.btn-engine:hover {
+  transform: scale(1.02);
+}
+
+.btn-engine:active {
+  transform: scale(0.95);
+}
+
+/* Industrial Grid Overlay */
+.bg-grid {
+  background-image: radial-gradient(circle at center, oklch(1 0 0 / 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Glow effect */
+.glow-orange {
+  box-shadow: 0 0 30px oklch(0.7 0.25 45 / 0.2);
 }
