@@ -25,10 +25,11 @@ interface StepSendToTikTokProps {
     setCaption: (val: string) => void;
     integrations: Integration[];
     loadingIntegrations: boolean;
-    selectedIntegration: Integration | null;
-    setSelectedIntegration: (val: Integration) => void;
+    selectedIntegrations: Integration[];
+    onToggleIntegration: (integration: Integration) => void;
     sending: boolean;
     sent: boolean;
+    sentPlatforms: string[];
     sendError: string | null;
     captionCopied: boolean;
     onSend: () => void;
@@ -37,16 +38,29 @@ interface StepSendToTikTokProps {
     onStartFresh: () => void;
 }
 
+function getPlatformLabel(identifier: string): string {
+    if (identifier === 'tiktok') return 'TikTok';
+    if (identifier === 'instagram-standalone') return 'Instagram';
+    return identifier;
+}
+
+function getPlatformEmoji(identifier: string): string {
+    if (identifier === 'tiktok') return '🎵';
+    if (identifier === 'instagram-standalone') return '📸';
+    return '📱';
+}
+
 export default function StepSendToTikTok({
     renderedSlides,
     caption,
     setCaption,
     integrations,
     loadingIntegrations,
-    selectedIntegration,
-    setSelectedIntegration,
+    selectedIntegrations,
+    onToggleIntegration,
     sending,
     sent,
+    sentPlatforms,
     sendError,
     captionCopied,
     onSend,
@@ -54,6 +68,8 @@ export default function StepSendToTikTok({
     onBack,
     onStartFresh,
 }: StepSendToTikTokProps) {
+    const hasSelection = selectedIntegrations.length > 0;
+
     return (
         <div className="space-y-8">
             {sent ? (
@@ -62,8 +78,24 @@ export default function StepSendToTikTok({
                     <PartyPopper size={64} className="mx-auto text-engine-orange" />
                     <h3 className="text-3xl font-bold">Carousel Sent! 🔥</h3>
                     <div className="max-w-md mx-auto space-y-4">
+                        {/* Show which platforms the post was sent to */}
+                        <div className="flex items-center justify-center gap-3">
+                            {sentPlatforms.map((platform) => (
+                                <span
+                                    key={platform}
+                                    className="px-3 py-1.5 bg-engine-orange/15 border border-engine-orange/30 text-engine-orange text-xs font-mono uppercase tracking-widest"
+                                >
+                                    {getPlatformEmoji(platform)} {getPlatformLabel(platform)}
+                                </span>
+                            ))}
+                        </div>
                         <p className="text-white/60 font-mono text-sm leading-relaxed">
-                            Your carousel is in your TikTok drafts. Open TikTok → Go to your profile → Drafts → Add a trending sound → Paste the caption → Hit publish 🔥
+                            {sentPlatforms.includes('tiktok') && sentPlatforms.includes('instagram-standalone')
+                                ? 'Your carousel was sent to both TikTok Creator Inbox and Instagram. Check each platform to review and publish.'
+                                : sentPlatforms.includes('instagram-standalone')
+                                    ? 'Your carousel was sent to Instagram. Check Instagram to review and publish 🔥'
+                                    : 'Your carousel is in your TikTok Creator Inbox. Open TikTok on desktop at tiktok.com → check your inbox → review the carousel → add a trending sound → publish 🔥'
+                            }
                         </p>
                         <button
                             onClick={onCopyCaption}
@@ -86,9 +118,9 @@ export default function StepSendToTikTok({
                 <>
                     <div className="flex items-start justify-between">
                         <div>
-                            <h3 className="text-2xl mb-2">Send to TikTok</h3>
+                            <h3 className="text-2xl mb-2">Send to Channels</h3>
                             <p className="text-white/40 font-mono text-xs">
-                                Review your caption, select a TikTok channel, and send as a draft.
+                                Review your caption, select one or more channels, and send your carousel.
                             </p>
                         </div>
                         <button
@@ -135,10 +167,10 @@ export default function StepSendToTikTok({
                         />
                     </div>
 
-                    {/* TikTok Channel Selector */}
+                    {/* Channel Selector — Multi-select */}
                     <div className="space-y-3">
                         <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
-                            TikTok Channel
+                            Publishing Channels — select one or more
                         </label>
                         {loadingIntegrations ? (
                             <div className="engine-card flex items-center gap-3 py-4">
@@ -148,16 +180,18 @@ export default function StepSendToTikTok({
                         ) : integrations.length === 0 ? (
                             <div className="engine-card py-6 text-center">
                                 <AlertTriangle size={24} className="mx-auto text-yellow-500/60 mb-2" />
-                                <p className="text-xs font-mono text-white/40">No TikTok channels found. Connect a TikTok account in Postiz first.</p>
+                                <p className="text-xs font-mono text-white/40">No channels found. Connect a TikTok or Instagram account in Postiz first.</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
                                 {integrations.map((integration) => {
-                                    const isSelected = selectedIntegration?.id === integration.id;
+                                    const isSelected = selectedIntegrations.some(si => si.id === integration.id);
+                                    const platformLabel = getPlatformLabel(integration.identifier);
+                                    const platformEmoji = getPlatformEmoji(integration.identifier);
                                     return (
                                         <button
                                             key={integration.id}
-                                            onClick={() => setSelectedIntegration(integration)}
+                                            onClick={() => onToggleIntegration(integration)}
                                             className={`w-full flex items-center gap-4 p-4 border transition-all text-left ${isSelected
                                                 ? 'border-engine-orange bg-engine-orange/10'
                                                 : 'border-white/10 bg-white/5 hover:border-white/20'
@@ -176,7 +210,9 @@ export default function StepSendToTikTok({
                                             )}
                                             <div className="flex-1">
                                                 <p className="text-sm font-medium">{integration.name}</p>
-                                                <p className="text-[10px] font-mono text-white/30 uppercase tracking-widest">TikTok</p>
+                                                <p className="text-[10px] font-mono text-white/30 uppercase tracking-widest">
+                                                    {platformEmoji} {platformLabel}
+                                                </p>
                                             </div>
                                             {isSelected && (
                                                 <div className="w-6 h-6 bg-engine-orange flex items-center justify-center">
@@ -204,8 +240,8 @@ export default function StepSendToTikTok({
                     <div className="flex justify-end pt-4">
                         <button
                             onClick={onSend}
-                            disabled={sending || !selectedIntegration || renderedSlides.length === 0}
-                            className={`btn-engine flex items-center gap-3 ${(sending || !selectedIntegration) ? 'opacity-50 cursor-not-allowed' : ''
+                            disabled={sending || !hasSelection || renderedSlides.length === 0}
+                            className={`btn-engine flex items-center gap-3 ${(sending || !hasSelection) ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                         >
                             {sending ? (
@@ -216,7 +252,14 @@ export default function StepSendToTikTok({
                             ) : (
                                 <>
                                     <Send size={20} />
-                                    <span>Send to TikTok Drafts</span>
+                                    <span>
+                                        {selectedIntegrations.length > 1
+                                            ? `Send to ${selectedIntegrations.length} Channels`
+                                            : selectedIntegrations.length === 1
+                                                ? `Send to ${getPlatformLabel(selectedIntegrations[0].identifier)} Inbox`
+                                                : 'Select a Channel'
+                                        }
+                                    </span>
                                 </>
                             )}
                         </button>

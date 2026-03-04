@@ -32,19 +32,21 @@ export async function GET() {
         const data = await response.json();
         console.log('[postiz-integrations] Raw API response:', JSON.stringify(data));
 
-        // Filter for TikTok integrations only
-        const tiktokIntegrations = (Array.isArray(data) ? data : data.integrations || [])
-            .filter((integration: any) => integration.identifier === 'tiktok')
+        // Return ALL supported integrations (TikTok + Instagram)
+        const SUPPORTED_IDENTIFIERS = ['tiktok', 'instagram-standalone'];
+
+        const allIntegrations = (Array.isArray(data) ? data : data.integrations || [])
+            .filter((integration: any) => SUPPORTED_IDENTIFIERS.includes(integration.identifier))
             .map((integration: any) => ({
                 id: integration.id,
-                name: integration.name || integration.providerIdentifier || 'TikTok',
+                name: integration.name || integration.providerIdentifier || integration.identifier,
                 picture: integration.picture || integration.profile?.picture || null,
                 identifier: integration.identifier,
             }));
 
-        console.log('[postiz-integrations] Filtered TikTok result:', JSON.stringify(tiktokIntegrations));
+        console.log('[postiz-integrations] Filtered integrations:', JSON.stringify(allIntegrations));
 
-        return NextResponse.json({ integrations: tiktokIntegrations });
+        return NextResponse.json({ integrations: allIntegrations });
     } catch (error: any) {
         console.error('[postiz-integrations] Error:', error.message);
         return NextResponse.json(

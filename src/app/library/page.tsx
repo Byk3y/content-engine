@@ -15,6 +15,12 @@ const ALL_TAGS = [
     'app_add_material',
     'cta',
     'hero',
+    'tips_card',
+    'app_flashcards',
+    'app_quiz',
+    'app_predict',
+    'app_podcast',
+    'app_studio_results',
 ] as const;
 
 type AssetTag = (typeof ALL_TAGS)[number];
@@ -29,6 +35,12 @@ const TAG_LABELS: Record<AssetTag, string> = {
     app_add_material: 'Add Material',
     cta: 'CTA',
     hero: 'Hero',
+    tips_card: 'Tips Card',
+    app_flashcards: 'App Flashcards',
+    app_quiz: 'App Quiz',
+    app_predict: 'App Predict',
+    app_podcast: 'App Podcast',
+    app_studio_results: 'App Studio Results',
 };
 
 // ─── Types ──────────────────────────────────────────────────────────
