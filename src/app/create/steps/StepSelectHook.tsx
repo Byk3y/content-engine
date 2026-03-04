@@ -10,6 +10,27 @@ import {
 import { Hook, DraftData } from '../types';
 import { getRelativeTime } from '../draft-helpers';
 
+const ANGLE_OPTIONS = [
+    {
+        id: 'pet',
+        label: 'Pet Evolution',
+        emoji: '🐾',
+        description: 'Your pet grows as you study. Guilt-trip hook.',
+    },
+    {
+        id: 'skeptic',
+        label: 'Skeptic Story',
+        emoji: '🤨',
+        description: 'Someone doubted AI. You proved them wrong.',
+    },
+    {
+        id: 'tips',
+        label: 'Study Tips',
+        emoji: '📚',
+        description: 'Rank methods, share techniques. No AI images needed for most slides.',
+    },
+];
+
 interface StepSelectHookProps {
     hooks: Hook[];
     loadingHooks: boolean;
@@ -26,6 +47,8 @@ interface StepSelectHookProps {
     onDeleteDraft: (id: string) => void;
     onStartFresh: () => void;
     currentDraftId: string | null;
+    selectedAngle: string;
+    onAngleChange: (angle: string) => void;
 }
 
 export default function StepSelectHook({
@@ -44,9 +67,48 @@ export default function StepSelectHook({
     onDeleteDraft,
     onStartFresh,
     currentDraftId,
+    selectedAngle,
+    onAngleChange,
 }: StepSelectHookProps) {
     return (
         <div className="space-y-12">
+            {/* Angle Selector */}
+            <div className="space-y-4">
+                <h3 className="text-xl font-mono uppercase tracking-widest text-white/40">
+                    Choose Angle
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                    {ANGLE_OPTIONS.map((angle) => {
+                        const isActive = selectedAngle === angle.id;
+                        return (
+                            <button
+                                key={angle.id}
+                                onClick={() => onAngleChange(angle.id)}
+                                className={`text-left p-5 border transition-all ${isActive
+                                    ? 'border-engine-orange bg-engine-orange/10'
+                                    : 'border-white/10 bg-white/5 hover:border-white/20'
+                                    }`}
+                            >
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-lg">{angle.emoji}</span>
+                                    <span className="text-sm font-bold uppercase tracking-wide">
+                                        {angle.label}
+                                    </span>
+                                    {isActive && (
+                                        <div className="ml-auto w-5 h-5 bg-engine-orange flex items-center justify-center">
+                                            <Check size={14} className="text-black" />
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-xs font-mono text-white/40 leading-relaxed">
+                                    {angle.description}
+                                </p>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
             {/* Recent Drafts Section */}
             {drafts.length > 0 && (
                 <div className="space-y-4">

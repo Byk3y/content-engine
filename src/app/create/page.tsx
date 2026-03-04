@@ -17,6 +17,7 @@ import StepSendToTikTok from './steps/StepSendToTikTok';
 // ─── Main Wizard Component ─────────────────────────────────────────
 export default function CreatePostPage() {
     const [step, setStep] = useState(1);
+    const [selectedAngle, setSelectedAngle] = useState('pet');
     const [hooks, setHooks] = useState<Hook[]>([]);
     const [loadingHooks, setLoadingHooks] = useState(true);
     const [selectedHook, setSelectedHook] = useState<Hook | null>(null);
@@ -39,7 +40,8 @@ export default function CreatePostPage() {
     const [captionCopied, setCaptionCopied] = useState(false);
     const [integrations, setIntegrations] = useState<any[]>([]);
     const [loadingIntegrations, setLoadingIntegrations] = useState(false);
-    const [selectedIntegration, setSelectedIntegration] = useState<any | null>(null);
+    const [selectedIntegrations, setSelectedIntegrations] = useState<any[]>([]);
+    const [sentPlatforms, setSentPlatforms] = useState<string[]>([]);
     const [sendError, setSendError] = useState<string | null>(null);
 
     // Draft Collection
@@ -67,7 +69,7 @@ export default function CreatePostPage() {
         const { data, error } = await supabase
             .from('hooks')
             .select('*')
-            .eq('angle', 'pet')
+            .eq('angle', selectedAngle)
             .order('times_used', { ascending: true });
 
         if (error) {
@@ -77,7 +79,14 @@ export default function CreatePostPage() {
             setHooks(data || []);
         }
         setLoadingHooks(false);
-    }, []);
+    }, [selectedAngle]);
+
+    function handleAngleChange(angle: string) {
+        setSelectedAngle(angle);
+        setSelectedHook(null);
+        setCustomHook('');
+        setUseCustom(false);
+    }
 
     useEffect(() => {
         fetchHooks();
@@ -145,6 +154,7 @@ export default function CreatePostPage() {
         setCaption('');
         setCurrentDraftId(null);
         setSent(false);
+        setSentPlatforms([]);
     }
 
     // ─── Get the active hook text ───────────────────────────────────
@@ -177,7 +187,7 @@ export default function CreatePostPage() {
                 },
                 body: JSON.stringify({
                     hook_text: hookText,
-                    angle: 'pet',
+                    angle: selectedAngle,
                     app_id: BRIGO_APP_ID,
                 }),
             });
@@ -215,6 +225,27 @@ export default function CreatePostPage() {
         setConfig(updated);
     }
 
+    function updateCharacter(text: string) {
+        if (!config) return;
+        setConfig({ ...config, character: text });
+    }
+
+    function updateRating(slideIndex: number, text: string) {
+        if (!config) return;
+        const updated = { ...config };
+        updated.slides = [...config.slides];
+        updated.slides[slideIndex] = { ...updated.slides[slideIndex], rating: text };
+        setConfig(updated);
+    }
+
+    function updateSubtext(slideIndex: number, text: string) {
+        if (!config) return;
+        const updated = { ...config };
+        updated.slides = [...config.slides];
+        updated.slides[slideIndex] = { ...updated.slides[slideIndex], subtext: text };
+        setConfig(updated);
+    }
+
     // ─── Step 3: Render Slides ─────────────────────────────────────
     async function handleRenderSlides() {
         if (!config) return;
@@ -228,6 +259,7 @@ export default function CreatePostPage() {
                 body: JSON.stringify({
                     slides: config.slides,
                     hookText: getHookText(),
+                    character: config.character || '',
                     app_id: BRIGO_APP_ID,
                 }),
             });
@@ -307,8 +339,9 @@ export default function CreatePostPage() {
             if (!res.ok) throw new Error('Failed to fetch integrations');
             const data = await res.json();
             setIntegrations(data.integrations || []);
+            // Auto-select all channels by default
             if (data.integrations?.length > 0) {
-                setSelectedIntegration(data.integrations[0]);
+                setSelectedIntegrations(data.integrations);
             }
         } catch (err: any) {
             console.error('Failed to fetch integrations:', err.message);
@@ -329,32 +362,58 @@ export default function CreatePostPage() {
         }
     }
 
-    // ─── Step 4: Send to TikTok ─────────────────────────────────────
+    // ─── Step 4: Toggle channel selection ────────────────────────────
+    function handleToggleIntegration(integration: any) {
+        setSelectedIntegrations(prev => {
+            const exists = prev.some((si: any) => si.id === integration.id);
+            if (exists) {
+                return prev.filter((si: any) => si.id !== integration.id);
+            }
+            return [...prev, integration];
+        });
+    }
+
+    // ─── Step 4: Send to selected channels ──────────────────────────
     async function handleSendToTikTok() {
-        if (!selectedIntegration || renderedSlides.length === 0) return;
+        if (selectedIntegrations.length === 0 || renderedSlides.length === 0) return;
         setSending(true);
         setSendError(null);
         try {
             const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
             const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-            const response = await fetch(`${supabaseUrl}/functions/v1/send-to-tiktok`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${supabaseAnonKey}`,
-                },
-                body: JSON.stringify({
-                    slide_urls: renderedSlides,
-                    caption,
-                    hook_id: selectedHook?.id || null,
-                    hook_text: getHookText(),
-                    integration_id: selectedIntegration.id,
-                }),
-            });
+            // Send to each selected channel in parallel
+            const results = await Promise.all(
+                selectedIntegrations.map(async (integration: any) => {
+                    const platform = integration.identifier === 'instagram-standalone' ? 'instagram' : 'tiktok';
+                    const response = await fetch(`${supabaseUrl}/functions/v1/send-to-tiktok`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${supabaseAnonKey}`,
+                        },
+                        body: JSON.stringify({
+                            slide_urls: renderedSlides,
+                            caption,
+                            hook_id: selectedHook?.id || null,
+                            hook_text: getHookText(),
+                            integration_id: integration.id,
+                            angle: selectedAngle,
+                            platform,
+                        }),
+                    });
 
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Send failed');
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || `Send to ${platform} failed`);
+                    return { platform: integration.identifier, success: true };
+                })
+            );
+
+            // Track which platforms succeeded
+            const succeeded = results
+                .filter(r => r.success)
+                .map(r => r.platform);
+            setSentPlatforms(succeeded);
 
             // Success — clear this draft from localStorage
             if (currentDraftId) {
@@ -363,7 +422,7 @@ export default function CreatePostPage() {
             }
             setSent(true);
         } catch (err: any) {
-            setSendError(err.message || 'Failed to send to TikTok');
+            setSendError(err.message || 'Failed to send');
             showToast('Send failed: ' + (err.message || 'Unknown error'), 'error');
         } finally {
             setSending(false);
@@ -378,7 +437,7 @@ export default function CreatePostPage() {
                 <h2 className="text-4xl md:text-6xl mb-2">Create Post</h2>
                 <p className="text-engine-orange font-mono text-sm tracking-widest flex items-center gap-2">
                     <span className="w-2 h-2 bg-engine-orange rounded-full" />
-                    PET EVOLUTION // 6-SLIDE CAROUSEL
+                    {selectedAngle === 'pet' ? 'PET EVOLUTION' : 'SKEPTIC STORY'} // 6-SLIDE CAROUSEL
                 </p>
             </header>
 
@@ -433,6 +492,8 @@ export default function CreatePostPage() {
                     onDeleteDraft={handleDeleteDraft}
                     onStartFresh={handleStartFresh}
                     currentDraftId={currentDraftId}
+                    selectedAngle={selectedAngle}
+                    onAngleChange={handleAngleChange}
                 />
             )}
 
@@ -444,6 +505,9 @@ export default function CreatePostPage() {
                     configError={configError}
                     onRegenerate={handleGenerateConfig}
                     onUpdateOverlay={updateSlideOverlay}
+                    onUpdateRating={updateRating}
+                    onUpdateSubtext={updateSubtext}
+                    onUpdateCharacter={updateCharacter}
                     onBack={() => setStep(1)}
                     onNext={() => goToStep(3)}
                 />
@@ -466,10 +530,11 @@ export default function CreatePostPage() {
                     setCaption={setCaption}
                     integrations={integrations}
                     loadingIntegrations={loadingIntegrations}
-                    selectedIntegration={selectedIntegration}
-                    setSelectedIntegration={setSelectedIntegration}
+                    selectedIntegrations={selectedIntegrations}
+                    onToggleIntegration={handleToggleIntegration}
                     sending={sending}
                     sent={sent}
+                    sentPlatforms={sentPlatforms}
                     sendError={sendError}
                     captionCopied={captionCopied}
                     onSend={handleSendToTikTok}

@@ -10,16 +10,19 @@ export interface Hook {
 
 export interface SlideConfig {
     slide_number: number;
-    image_source: 'ai_generate' | 'library';
+    image_source: 'ai_generate' | 'library' | 'tips_card';
     image_prompt?: string;
     asset_tag?: string;
     text_overlay: string | null;
     text_position: 'center' | 'bottom';
+    rating?: string;
+    subtext?: string;
 }
 
 export interface PostConfig {
     angle: string;
     hook: string;
+    character?: string;
     caption: string;
     slides: SlideConfig[];
 }
