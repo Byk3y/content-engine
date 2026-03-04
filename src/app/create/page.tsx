@@ -227,7 +227,7 @@ export default function CreatePostPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     slides: config.slides,
-                    hook_text: getHookText(),
+                    hookText: getHookText(),
                     app_id: BRIGO_APP_ID,
                 }),
             });

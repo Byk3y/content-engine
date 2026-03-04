@@ -16,7 +16,7 @@ export default function RootLayout({
     { name: 'Dashboard', icon: LayoutGrid, href: '/' },
     { name: 'Create Post', icon: Drill, href: '/create' },
     { name: 'Asset Library', icon: BookOpen, href: '/library' },
-    { name: 'Results', icon: BarChart2, href: '/performance' },
+    { name: 'Results', icon: BarChart2, href: '/results' },
     { name: 'Logs', icon: Terminal, href: '/settings' },
   ];
 
@@ -50,8 +50,8 @@ export default function RootLayout({
                     key={item.href}
                     href={item.href}
                     className={`flex items-center gap-4 px-6 py-4 rounded-none border-l-2 transition-all group ${isActive
-                        ? 'border-engine-orange bg-white/5'
-                        : 'border-transparent hover:border-engine-orange hover:bg-white/5'
+                      ? 'border-engine-orange bg-white/5'
+                      : 'border-transparent hover:border-engine-orange hover:bg-white/5'
                       }`}
                   >
                     <item.icon
