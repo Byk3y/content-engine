@@ -87,28 +87,28 @@ export default async function Dashboard() {
   ];
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-4 lg:space-y-12">
       {/* Header Section */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-4xl md:text-6xl mb-2">Dashboard</h2>
+          <h2 className="text-3xl md:text-6xl mb-2">Dashboard</h2>
           <p className="text-engine-orange font-mono text-sm tracking-widest flex items-center gap-2">
             <span className="w-2 h-2 bg-engine-orange animate-ping rounded-full" />
             SYSTEM OPERATIONAL // LOGGED AS ADMINISTRATOR
           </p>
         </div>
 
-        <Link href="/create" className="btn-engine flex items-center gap-4">
+        <Link href="/create" className="btn-engine w-full md:w-auto flex items-center justify-center md:justify-start gap-4">
           <Plus size={24} />
           <span>New Post</span>
         </Link>
       </header>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         {stats.map((stat, i) => (
-          <div key={i} className="engine-card">
-            <div className="flex justify-between items-start mb-4">
+          <div key={i} className={`engine-card p-4 md:p-6 ${i === 2 ? 'col-span-2 md:col-span-1' : ''}`}>
+            <div className="flex justify-between items-start mb-2 md:mb-4">
               <stat.icon size={20} className="text-engine-orange" />
               {stat.growth && (
                 <span className="text-[10px] font-mono bg-engine-orange/10 text-engine-orange px-2 py-1">
@@ -116,18 +116,18 @@ export default async function Dashboard() {
                 </span>
               )}
             </div>
-            <div className="text-4xl font-display uppercase tracking-widest">{stat.value}</div>
-            <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1">{stat.label}</div>
+            <div className="text-[36px] md:text-4xl font-display uppercase tracking-widest leading-none">{stat.value}</div>
+            <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1 md:mt-2">{stat.label}</div>
           </div>
         ))}
       </div>
 
       {/* Main Grid: Recent Activity & Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
         {/* Recent Posts */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between border-b border-white/5 pb-4">
-            <h3 className="text-2xl">Recent Posts</h3>
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
+          <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4">
+            <h3 className="text-xl md:text-2xl">Recent Posts</h3>
             <Link href="/results" className="text-[10px] font-mono text-engine-orange hover:underline uppercase">View All Logs</Link>
           </div>
 
@@ -141,14 +141,14 @@ export default async function Dashboard() {
               </div>
             ) : (
               recentPosts.map((post: any, i: number) => (
-                <div key={post.id} className="flex items-center justify-between p-4 group hover:bg-white/5 border border-transparent hover:border-white/5 transition-all">
-                  <div className="flex items-center gap-6">
-                    <div className="w-12 h-12 bg-engine-gray/50 flex items-center justify-center font-display text-xl border border-white/10 group-hover:border-engine-orange transition-colors">
+                <div key={post.id} className="flex flex-row items-center justify-between gap-3 p-3 md:p-4 group hover:bg-white/5 border border-transparent hover:border-white/5 transition-all">
+                  <div className="flex items-center gap-3 md:gap-6 flex-1 min-w-0">
+                    <div className="w-10 h-10 md:w-12 md:h-12 shrink-0 bg-engine-gray/50 flex items-center justify-center font-display text-lg md:text-xl border border-white/10 group-hover:border-engine-orange transition-colors">
                       {i + 1}
                     </div>
-                    <div>
-                      <h4 className="text-xl group-hover:text-engine-orange transition-colors">{post.title}</h4>
-                      <div className="flex items-center gap-4 text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-lg md:text-xl group-hover:text-engine-orange transition-colors line-clamp-2 leading-tight">{post.title}</h4>
+                      <div className="flex items-center gap-4 text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1 md:mt-2">
                         <span className="flex items-center gap-1"><Clock size={10} /> {timeAgo(post.created_at)}</span>
                         <span className={`flex items-center gap-1 ${post.status === 'sent' ? 'text-green-500' : 'text-engine-orange'}`}>
                           <div className={`w-1 h-1 rounded-full ${post.status === 'sent' ? 'bg-green-500' : 'bg-engine-orange'}`} />
@@ -157,9 +157,9 @@ export default async function Dashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4 md:gap-6 shrink-0">
                     <div className="text-right">
-                      <div className="text-xl font-display">{formatNumber(post.views)}</div>
+                      <div className="text-lg md:text-xl font-display leading-none">{formatNumber(post.views)}</div>
                       <div className="text-[10px] font-mono text-white/40 uppercase">Views</div>
                     </div>
                     {post.postiz_post_id && post.postiz_post_id !== 'unknown' ? (
@@ -184,9 +184,9 @@ export default async function Dashboard() {
         </div>
 
         {/* Asset Insights */}
-        <div className="space-y-6">
-          <div className="border-b border-white/5 pb-4">
-            <h3 className="text-2xl">Asset Insights</h3>
+        <div className="space-y-4 md:space-y-6">
+          <div className="border-b border-white/5 pb-3 md:pb-4">
+            <h3 className="text-xl md:text-2xl">Asset Insights</h3>
           </div>
           <div className="engine-card bg-gradient-to-br from-engine-orange/20 to-transparent border-white/10">
             <p className="text-sm border-l-2 border-engine-orange pl-4 mb-6">

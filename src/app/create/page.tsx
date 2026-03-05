@@ -431,11 +431,11 @@ export default function CreatePostPage() {
 
     // ─── Render ─────────────────────────────────────────────────────
     return (
-        <div className="space-y-10 max-w-5xl">
+        <div className="space-y-10 max-w-5xl w-full">
             {/* Header */}
             <header>
-                <h2 className="text-4xl md:text-6xl mb-2">Create Post</h2>
-                <p className="text-engine-orange font-mono text-sm tracking-widest flex items-center gap-2">
+                <h2 className="text-3xl md:text-6xl mb-2">Create Post</h2>
+                <p className="text-engine-orange font-mono text-xs md:text-sm tracking-widest flex items-center gap-2">
                     <span className="w-2 h-2 bg-engine-orange rounded-full" />
                     {selectedAngle === 'pet' ? 'PET EVOLUTION' : 'SKEPTIC STORY'} // 6-SLIDE CAROUSEL
                 </p>
@@ -448,10 +448,10 @@ export default function CreatePostPage() {
                     const isActive = step === stepNum;
                     const isDone = step > stepNum;
                     return (
-                        <div key={label} className="flex items-center gap-2">
+                        <div key={label} className={`items-center gap-2 ${isActive ? 'flex' : 'hidden md:flex'}`}>
                             {i > 0 && (
                                 <div
-                                    className={`h-px w-6 md:w-12 ${isDone ? 'bg-engine-orange' : 'bg-white/10'}`}
+                                    className={`h-px w-6 md:w-12 hidden md:block ${isDone ? 'bg-engine-orange' : 'bg-white/10'}`}
                                 />
                             )}
                             <div
@@ -465,7 +465,7 @@ export default function CreatePostPage() {
                                 <span className="text-[10px] font-mono uppercase tracking-widest">
                                     {isDone ? '✓' : stepNum}
                                 </span>
-                                <span className="text-[10px] font-mono uppercase tracking-widest hidden md:inline">
+                                <span className={`text-[10px] font-mono uppercase tracking-widest ${isActive ? 'inline' : 'hidden md:inline'}`}>
                                     {label}
                                 </span>
                             </div>

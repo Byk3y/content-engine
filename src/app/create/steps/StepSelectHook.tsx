@@ -71,38 +71,43 @@ export default function StepSelectHook({
     onAngleChange,
 }: StepSelectHookProps) {
     return (
-        <div className="space-y-12">
+        <div className="space-y-6 md:space-y-12">
             {/* Angle Selector */}
             <div className="space-y-4">
-                <h3 className="text-xl font-mono uppercase tracking-widest text-white/40">
+                <h3 className="text-lg md:text-xl font-mono uppercase tracking-widest text-white/40">
                     Choose Angle
                 </h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {ANGLE_OPTIONS.map((angle) => {
                         const isActive = selectedAngle === angle.id;
                         return (
                             <button
                                 key={angle.id}
                                 onClick={() => onAngleChange(angle.id)}
-                                className={`text-left p-5 border transition-all ${isActive
+                                className={`text-left p-4 md:p-5 border transition-all ${isActive
                                     ? 'border-engine-orange bg-engine-orange/10'
                                     : 'border-white/10 bg-white/5 hover:border-white/20'
                                     }`}
                             >
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-lg">{angle.emoji}</span>
-                                    <span className="text-sm font-bold uppercase tracking-wide">
-                                        {angle.label}
-                                    </span>
-                                    {isActive && (
-                                        <div className="ml-auto w-5 h-5 bg-engine-orange flex items-center justify-center">
-                                            <Check size={14} className="text-black" />
+                                <div className="flex items-start gap-4 md:block">
+                                    <span className="text-2xl md:text-lg shrink-0 mt-1 md:mt-0 md:hidden">{angle.emoji}</span>
+                                    <div className="flex-1 space-y-1 md:space-y-0 text-left">
+                                        <div className="flex items-center gap-2 mb-0 md:mb-2">
+                                            <span className="text-lg md:inline hidden">{angle.emoji}</span>
+                                            <span className="text-sm font-bold uppercase tracking-wide">
+                                                {angle.label}
+                                            </span>
+                                            {isActive && (
+                                                <div className="ml-auto w-5 h-5 bg-engine-orange flex items-center justify-center shrink-0">
+                                                    <Check size={14} className="text-black" />
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+                                        <p className="text-xs font-mono text-white/40 leading-relaxed md:h-auto overflow-hidden">
+                                            {angle.description}
+                                        </p>
+                                    </div>
                                 </div>
-                                <p className="text-xs font-mono text-white/40 leading-relaxed">
-                                    {angle.description}
-                                </p>
                             </button>
                         );
                     })}
@@ -113,7 +118,7 @@ export default function StepSelectHook({
             {drafts.length > 0 && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-mono uppercase tracking-widest text-white/40 flex items-center gap-2">
+                        <h3 className="text-lg md:text-xl font-mono uppercase tracking-widest text-white/40 flex items-center gap-2">
                             <Clock size={16} />
                             Recent Drafts
                         </h3>
@@ -164,8 +169,8 @@ export default function StepSelectHook({
 
             <div className="space-y-8">
                 <div>
-                    <h3 className="text-2xl mb-2">Select Hook</h3>
-                    <p className="text-white/40 font-mono text-xs">
+                    <h3 className="text-xl md:text-2xl mb-2">Select Hook</h3>
+                    <p className="text-white/40 font-mono text-[10px] md:text-xs">
                         Choose a hook from the bank or write your own. Untested hooks appear first.
                     </p>
                 </div>
@@ -226,7 +231,7 @@ export default function StepSelectHook({
                 <div className="space-y-3">
                     <div className="flex items-center gap-3">
                         <div className={`w-1 h-6 ${useCustom ? 'bg-engine-orange' : 'bg-white/10'}`} />
-                        <h3 className="text-lg">Write Your Own</h3>
+                        <h3 className="text-base md:text-lg">Write Your Own</h3>
                     </div>
                     <div className="flex gap-3">
                         <input

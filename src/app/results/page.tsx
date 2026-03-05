@@ -10,7 +10,7 @@ interface Post {
     status: string;
     views: number;
     created_at: string;
-    caption: string;
+    caption: string | null;
     postiz_post_id: string | null;
 }
 
@@ -107,27 +107,39 @@ export default function ResultsPage() {
             </header>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="engine-card">
-                    <div className="flex justify-between items-start mb-4">
+            <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-6">
+                <div className="engine-card !p-3 md:!p-6 flex flex-col items-center justify-center text-center aspect-square md:aspect-auto md:items-start md:text-left">
+                    <div className="hidden md:flex justify-between items-start mb-4">
                         <Eye size={20} className="text-engine-orange" />
                     </div>
-                    <div className="text-4xl font-display uppercase tracking-widest">{formatNumber(totalViews)}</div>
-                    <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1">Total Views</div>
+                    <div className="text-[28px] md:text-4xl font-display uppercase tracking-widest leading-none">
+                        {formatNumber(totalViews)}
+                    </div>
+                    <div className="text-[9px] md:text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1">
+                        Total Views
+                    </div>
                 </div>
-                <div className="engine-card">
-                    <div className="flex justify-between items-start mb-4">
+                <div className="engine-card !p-3 md:!p-6 flex flex-col items-center justify-center text-center aspect-square md:aspect-auto md:items-start md:text-left">
+                    <div className="hidden md:flex justify-between items-start mb-4">
                         <TrendingUp size={20} className="text-engine-orange" />
                     </div>
-                    <div className="text-4xl font-display uppercase tracking-widest">{totalPosts}</div>
-                    <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1">Posts Sent</div>
+                    <div className="text-[28px] md:text-4xl font-display uppercase tracking-widest leading-none">
+                        {totalPosts}
+                    </div>
+                    <div className="text-[9px] md:text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1">
+                        Posts Sent
+                    </div>
                 </div>
-                <div className="engine-card">
-                    <div className="flex justify-between items-start mb-4">
+                <div className="engine-card !p-3 md:!p-6 flex flex-col items-center justify-center text-center aspect-square md:aspect-auto md:items-start md:text-left">
+                    <div className="hidden md:flex justify-between items-start mb-4">
                         <BarChart2 size={20} className="text-engine-orange" />
                     </div>
-                    <div className="text-4xl font-display uppercase tracking-widest">{formatNumber(avgViews)}</div>
-                    <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1">Avg Views / Post</div>
+                    <div className="text-[28px] md:text-4xl font-display uppercase tracking-widest leading-none">
+                        {formatNumber(avgViews)}
+                    </div>
+                    <div className="text-[9px] md:text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1">
+                        Avg Views
+                    </div>
                 </div>
             </div>
 
@@ -196,26 +208,30 @@ export default function ResultsPage() {
                                     </div>
                                 </div>
 
-                                {/* Hook Text */}
-                                <div className="col-span-5">
-                                    <h4 className="text-sm font-medium group-hover:text-engine-orange transition-colors line-clamp-2">
+                                {/* Hook Text (Title) */}
+                                <div className="md:col-span-5">
+                                    <h4 className="text-base font-medium group-hover:text-engine-orange transition-colors line-clamp-2 md:text-sm">
                                         {post.hook_text || 'Untitled Post'}
                                     </h4>
-                                    <p className="text-[10px] font-mono text-white/20 mt-1 line-clamp-1">
-                                        {post.caption?.substring(0, 80)}...
+                                </div>
+
+                                {/* Mobile Caption / Desktop Metadata */}
+                                <div className="col-span-1 md:hidden">
+                                    <p className="text-[10px] font-mono text-white/20 line-clamp-2">
+                                        {post.caption}
                                     </p>
                                 </div>
 
-                                {/* Date */}
-                                <div className="col-span-2">
+                                {/* DESKTOP Date */}
+                                <div className="col-span-2 hidden md:block">
                                     <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest flex items-center gap-1">
                                         <Clock size={10} />
                                         {timeAgo(post.created_at)}
                                     </span>
                                 </div>
 
-                                {/* Status */}
-                                <div className="col-span-1">
+                                {/* DESKTOP Status */}
+                                <div className="col-span-1 hidden md:block">
                                     <span className={`text-[10px] font-mono uppercase tracking-widest flex items-center gap-1 ${post.status === 'sent' ? 'text-green-500' : 'text-engine-orange'
                                         }`}>
                                         <div className={`w-1.5 h-1.5 rounded-full ${post.status === 'sent' ? 'bg-green-500' : 'bg-engine-orange'
@@ -224,8 +240,8 @@ export default function ResultsPage() {
                                     </span>
                                 </div>
 
-                                {/* Views — Inline Editable */}
-                                <div className="col-span-3 flex items-center gap-2 justify-end">
+                                {/* DESKTOP Views */}
+                                <div className="col-span-3 hidden md:flex items-center gap-2 justify-end">
                                     {editingId === post.id ? (
                                         <div className="flex items-center gap-2">
                                             <input
@@ -279,6 +295,65 @@ export default function ResultsPage() {
                                             )}
                                         </button>
                                     )}
+                                </div>
+
+                                {/* MOBILE Metadata + Views Row */}
+                                <div className="flex md:hidden items-center justify-between mt-1">
+                                    {/* Left: Time + Badge */}
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest flex items-center gap-1">
+                                            <Clock size={10} />
+                                            {timeAgo(post.created_at)}
+                                        </span>
+                                        <span className={`text-[10px] font-mono uppercase tracking-widest flex items-center gap-1 ${post.status === 'sent' ? 'text-green-500' : 'text-engine-orange'
+                                            }`}>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${post.status === 'sent' ? 'bg-green-500' : 'bg-engine-orange'
+                                                }`} />
+                                            {post.status}
+                                        </span>
+                                    </div>
+
+                                    {/* Right: Views + Eye Icon */}
+                                    <div className="flex items-center gap-2">
+                                        {editingId === post.id ? (
+                                            <div className="flex items-center gap-2 scale-90 origin-right">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={editValue}
+                                                    onChange={(e) => setEditValue(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') handleSaveViews(post.id);
+                                                        if (e.key === 'Escape') setEditingId(null);
+                                                    }}
+                                                    autoFocus
+                                                    className="w-20 px-2 py-1 bg-white/5 border border-engine-orange/50 text-xs font-mono text-right focus:outline-none focus:border-engine-orange"
+                                                />
+                                                <button
+                                                    onClick={() => handleSaveViews(post.id)}
+                                                    disabled={savingId === post.id}
+                                                    className="p-1 bg-engine-orange/20 border border-engine-orange/40 text-engine-orange"
+                                                >
+                                                    <Save size={12} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => {
+                                                    setEditingId(post.id);
+                                                    setEditValue(String(post.views || 0));
+                                                }}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <span className="text-lg font-display text-white">
+                                                    {formatNumber(post.views || 0)}
+                                                </span>
+                                                <div className="p-1 border border-white/10 text-white/40">
+                                                    <Eye size={12} />
+                                                </div>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}

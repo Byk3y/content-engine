@@ -68,13 +68,13 @@ function AssetCard({
     deleting: string | null;
 }) {
     return (
-        <div className="group relative engine-card !p-0 overflow-hidden max-w-[320px] mx-auto w-full">
+        <div className="group relative engine-card !p-0 overflow-hidden w-full md:max-w-[320px] mx-auto">
             {/* Thumbnail */}
-            <div className="aspect-[4/5] relative bg-engine-gray/30 overflow-hidden">
+            <div className="aspect-[4/5] relative bg-white/5 overflow-hidden flex items-center justify-center">
                 <img
                     src={asset.storage_url}
                     alt={asset.label || asset.tag}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="w-full h-full object-contain md:object-cover transition-transform duration-300 group-hover:scale-105 px-2 md:px-0"
                     loading="lazy"
                 />
 
@@ -95,15 +95,15 @@ function AssetCard({
             </div>
 
             {/* Info bar */}
-            <div className="p-3 space-y-1 bg-engine-black/80 backdrop-blur-sm border-t border-white/5">
-                <p className="text-[10px] font-mono truncate text-white/80 uppercase tracking-wider">
+            <div className="p-2 md:p-3 space-y-0.5 md:space-y-1 bg-engine-black/80 backdrop-blur-sm border-t border-white/5">
+                <p className="hidden md:block text-[9px] md:text-[10px] font-mono truncate text-white/80 uppercase tracking-wider">
                     {asset.label || 'Untitled'}
                 </p>
-                <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-mono text-engine-orange uppercase tracking-widest opacity-80">
+                <div className="flex items-center justify-between gap-1 overflow-hidden">
+                    <span className="text-[8px] md:text-[9px] font-mono text-engine-orange uppercase tracking-widest opacity-80 truncate flex-1">
                         {TAG_LABELS[asset.tag as AssetTag] || asset.tag}
                     </span>
-                    <span className="text-[9px] font-mono text-white/30">
+                    <span className="text-[8px] md:text-[9px] font-mono text-white/30 shrink-0">
                         {asset.use_count}×
                     </span>
                 </div>
@@ -289,39 +289,40 @@ export default function AssetLibraryPage() {
 
     // ─── Render ─────────────────────────────────────────────────────
     return (
-        <div className="space-y-12">
+        <div className="space-y-3 lg:space-y-12">
             {/* Header */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <h2 className="text-4xl md:text-6xl mb-2">Asset Library</h2>
-                    <p className="text-engine-orange font-mono text-sm tracking-widest flex items-center gap-2">
-                        <span className="w-2 h-2 bg-engine-orange rounded-full" />
-                        {assets.length} ASSETS // {Object.keys(grouped).length} CATEGORIES
-                    </p>
+            <header className="flex flex-col gap-3">
+                <div className="flex items-center gap-4">
+                    <h2 className="text-3xl md:text-6xl font-display truncate">Asset Library</h2>
+                    {/* Small mobile-only upload button */}
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="md:hidden bg-engine-orange text-black px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest flex items-center gap-2 shrink-0 hover:bg-white transition-colors"
+                    >
+                        <Upload size={14} />
+                        <span>Add</span>
+                    </button>
                 </div>
-
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="btn-engine flex items-center gap-4"
-                >
-                    <Upload size={24} />
-                    <span>Upload Assets</span>
-                </button>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={onFileSelect}
-                />
+                <p className="text-engine-orange font-mono text-[10px] md:text-sm tracking-widest flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-engine-orange rounded-full" />
+                    {assets.length} ASSETS // {Object.keys(grouped).length} CATEGORIES
+                </p>
             </header>
 
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={onFileSelect}
+            />
+
             {/* Tag Filters */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex overflow-x-auto gap-2 no-scrollbar pb-3 md:pb-0 md:flex-wrap flex-nowrap border-b border-white/5 md:border-none">
                 <button
                     onClick={() => setFilterTag('all')}
-                    className={`px-4 py-2 text-[10px] font-mono uppercase tracking-widest border transition-all ${filterTag === 'all'
+                    className={`px-4 py-2 text-[10px] font-mono uppercase tracking-widest border transition-all shrink-0 ${filterTag === 'all'
                         ? 'bg-engine-orange text-black border-engine-orange'
                         : 'bg-transparent text-white/60 border-white/10 hover:border-engine-orange hover:text-engine-orange'
                         }`}
@@ -334,7 +335,7 @@ export default function AssetLibraryPage() {
                         <button
                             key={tag}
                             onClick={() => setFilterTag(tag)}
-                            className={`px-4 py-2 text-[10px] font-mono uppercase tracking-widest border transition-all ${filterTag === tag
+                            className={`px-4 py-2 text-[10px] font-mono uppercase tracking-widest border transition-all shrink-0 ${filterTag === tag
                                 ? 'bg-engine-orange text-black border-engine-orange'
                                 : 'bg-transparent text-white/60 border-white/10 hover:border-engine-orange hover:text-engine-orange'
                                 }`}
@@ -345,209 +346,240 @@ export default function AssetLibraryPage() {
                 })}
             </div>
 
-            {/* Drop Zone */}
-            <div
-                onDragOver={onDragOver}
-                onDragLeave={onDragLeave}
-                onDrop={onDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed cursor-pointer transition-all duration-200 p-12 flex flex-col items-center justify-center gap-4 ${dragOver
-                    ? 'border-engine-orange bg-engine-orange/10'
-                    : 'border-white/10 hover:border-white/20 bg-white/[0.02]'
-                    }`}
-            >
-                <Upload
-                    size={32}
-                    className={`transition-colors ${dragOver ? 'text-engine-orange' : 'text-white/30'
+            {/* Upload Zone (Desktop Only) */}
+            <div className="space-y-4">
+
+                {/* Desktop Drop Zone */}
+                <div
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`hidden md:flex border-2 border-dashed cursor-pointer transition-all duration-200 p-12 flex-col items-center justify-center gap-4 ${dragOver
+                        ? 'border-engine-orange bg-engine-orange/10'
+                        : 'border-white/10 hover:border-white/20 bg-white/[0.02]'
                         }`}
-                />
-                <p className="text-[10px] font-mono uppercase tracking-widest text-white/40">
-                    {dragOver
-                        ? 'Drop files here'
-                        : 'Drag & drop images here, or click to browse'}
-                </p>
+                >
+                    <Upload
+                        size={32}
+                        className={`transition-colors ${dragOver ? 'text-engine-orange' : 'text-white/30'
+                            }`}
+                    />
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+                        {dragOver
+                            ? 'Drop files here'
+                            : 'Drag & drop images here, or click to browse'}
+                    </p>
+                </div>
             </div>
 
             {/* Asset Grid (grouped by tag) */}
-            {loading ? (
-                <div className="space-y-8">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="space-y-4">
-                            <div className="h-6 w-40 bg-white/5 animate-pulse" />
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {[1, 2, 3].map((j) => (
-                                    <div
-                                        key={j}
-                                        className="aspect-[4/5] bg-white/5 animate-pulse rounded-sm"
-                                    />
-                                ))}
+            {
+                loading ? (
+                    <div className="space-y-8">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="space-y-4">
+                                <div className="h-6 w-40 bg-white/5 animate-pulse" />
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    {[1, 2, 3].map((j) => (
+                                        <div
+                                            key={j}
+                                            className="aspect-[4/5] bg-white/5 animate-pulse rounded-sm"
+                                        />
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            ) : Object.keys(grouped).length === 0 ? (
-                <div className="text-center py-20">
-                    <ImageIcon size={48} className="mx-auto text-white/10 mb-4" />
-                    <h3 className="text-2xl mb-2">No Assets Yet</h3>
-                    <p className="text-white/40 font-mono text-sm">
-                        Upload your first screenshots to get started
-                    </p>
-                </div>
-            ) : filterTag === 'all' ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {assets.map((asset) => (
-                        <AssetCard key={asset.id} asset={asset} onDelete={handleDelete} deleting={deleting} />
-                    ))}
-                </div>
-            ) : (
-                <div className="space-y-12">
-                    {Object.entries(grouped).map(([tag, tagAssets]) => (
-                        <section key={tag}>
-                            {/* Section Header */}
-                            <div className="flex items-center gap-4 border-b border-white/5 pb-4 mb-6">
-                                <div className="w-1 h-6 bg-engine-orange" />
-                                <h3 className="text-2xl font-display uppercase tracking-tight">
-                                    {TAG_LABELS[tag as AssetTag] || tag}
-                                </h3>
-                                <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest bg-white/5 px-2 py-0.5 border border-white/5">
-                                    {tagAssets.length} asset{tagAssets.length !== 1 ? 's' : ''}
-                                </span>
-                            </div>
-
-                            {/* Asset Cards Grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {tagAssets.map((asset) => (
-                                    <AssetCard key={asset.id} asset={asset} onDelete={handleDelete} deleting={deleting} />
-                                ))}
-                            </div>
-                        </section>
-                    ))}
-                </div>
-            )}
-
-            {/* Upload Modal */}
-            {showUploadModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-                    <div className="w-full max-w-lg mx-4 bg-engine-black border border-white/10 p-8 space-y-6">
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-2xl">Upload Assets</h3>
-                            <button
-                                onClick={() => {
-                                    setShowUploadModal(false);
-                                    setPendingFiles([]);
-                                }}
-                                className="p-2 hover:bg-white/5 transition-colors"
-                            >
-                                <X size={20} className="text-white/40" />
-                            </button>
-                        </div>
-
-                        {/* File List */}
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {pendingFiles.map((file, i) => (
-                                <div
-                                    key={i}
-                                    className="flex items-center gap-3 p-3 bg-white/5 border border-white/5"
-                                >
-                                    <ImageIcon size={16} className="text-engine-orange shrink-0" />
-                                    <span className="text-xs font-mono truncate flex-1">
-                                        {file.name}
-                                    </span>
-                                    <span className="text-[9px] font-mono text-white/40 shrink-0">
-                                        {(file.size / 1024).toFixed(0)} KB
-                                    </span>
+                        ))}
+                    </div>
+                ) : Object.keys(grouped).length === 0 ? (
+                    <div className="text-center py-20">
+                        <ImageIcon size={48} className="mx-auto text-white/10 mb-4" />
+                        <h3 className="text-2xl mb-2">No Assets Yet</h3>
+                        <p className="text-white/40 font-mono text-sm">
+                            Upload your first screenshots to get started
+                        </p>
+                    </div>
+                ) : filterTag === 'all' ? (
+                    <div className="space-y-6">
+                        {/* Mobile Carousel (2 Rows) for ALL assets */}
+                        <div className="md:hidden grid grid-rows-2 grid-flow-col gap-3 overflow-x-auto pb-6 no-scrollbar w-screen -mx-4 px-4">
+                            {assets.map((asset) => (
+                                <div key={asset.id} className="w-[140px] shrink-0">
+                                    <AssetCard asset={asset} onDelete={handleDelete} deleting={deleting} />
                                 </div>
                             ))}
                         </div>
 
-                        {/* Tag Selector */}
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest block">
-                                Tag
-                            </label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {ALL_TAGS.map((tag) => (
-                                    <button
-                                        key={tag}
-                                        onClick={() => setUploadTag(tag)}
-                                        className={`px-3 py-2 text-[9px] font-mono uppercase tracking-wider border transition-all ${uploadTag === tag
-                                            ? 'bg-engine-orange text-black border-engine-orange'
-                                            : 'bg-transparent text-white/60 border-white/10 hover:border-engine-orange'
-                                            }`}
-                                    >
-                                        {TAG_LABELS[tag]}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Label Input */}
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest block">
-                                Label (optional)
-                            </label>
-                            <input
-                                type="text"
-                                value={uploadLabel}
-                                onChange={(e) => setUploadLabel(e.target.value)}
-                                placeholder="e.g. Onboarding Screen 1"
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 text-sm font-mono placeholder:text-white/20 focus:border-engine-orange focus:outline-none transition-colors"
-                            />
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => {
-                                    setShowUploadModal(false);
-                                    setPendingFiles([]);
-                                }}
-                                className="flex-1 px-4 py-3 border border-white/10 text-white/60 text-[10px] font-mono uppercase tracking-widest hover:bg-white/5 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleUpload}
-                                disabled={uploading}
-                                className="flex-1 btn-engine flex items-center justify-center gap-2 !py-3"
-                            >
-                                {uploading ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-black/30 border-t-black animate-spin rounded-full" />
-                                        <span>Uploading...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Check size={18} />
-                                        <span>
-                                            Upload {pendingFiles.length} File
-                                            {pendingFiles.length !== 1 ? 's' : ''}
-                                        </span>
-                                    </>
-                                )}
-                            </button>
+                        {/* Desktop Grid */}
+                        <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 overflow-hidden">
+                            {assets.map((asset) => (
+                                <AssetCard key={asset.id} asset={asset} onDelete={handleDelete} deleting={deleting} />
+                            ))}
                         </div>
                     </div>
-                </div>
-            )}
+                ) : (
+                    <div className="space-y-8">
+                        {Object.entries(grouped).map(([tag, tagAssets]) => (
+                            <section key={tag} className="space-y-4">
+                                {/* Section Header */}
+                                <div className="flex items-center gap-4 border-b border-white/5 pb-2">
+                                    <div className="w-1 h-4 bg-engine-orange" />
+                                    <h3 className="text-xl font-display uppercase tracking-tight">
+                                        {TAG_LABELS[tag as AssetTag] || tag}
+                                    </h3>
+                                    <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest bg-white/5 px-2 py-0.5 border border-white/5">
+                                        {tagAssets.length}
+                                    </span>
+                                </div>
+
+                                {/* Mobile Carousel (Single Row for single tag) */}
+                                <div className="md:hidden flex overflow-x-auto gap-3 pb-6 no-scrollbar w-screen -mx-4 px-4">
+                                    {tagAssets.map((asset) => (
+                                        <div key={asset.id} className="w-[140px] shrink-0">
+                                            <AssetCard asset={asset} onDelete={handleDelete} deleting={deleting} />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Desktop Grid */}
+                                <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 gap-4 overflow-hidden">
+                                    {tagAssets.map((asset) => (
+                                        <AssetCard key={asset.id} asset={asset} onDelete={handleDelete} deleting={deleting} />
+                                    ))}
+                                </div>
+                            </section>
+                        ))}
+                    </div>
+                )
+            }
+
+            {/* Upload Modal */}
+            {
+                showUploadModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                        <div className="w-[calc(100%-2rem)] max-w-lg bg-engine-black border border-white/10 p-8 space-y-6">
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-2xl">Upload Assets</h3>
+                                <button
+                                    onClick={() => {
+                                        setShowUploadModal(false);
+                                        setPendingFiles([]);
+                                    }}
+                                    className="p-2 hover:bg-white/5 transition-colors"
+                                >
+                                    <X size={20} className="text-white/40" />
+                                </button>
+                            </div>
+
+                            {/* File List */}
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                                {pendingFiles.map((file, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex items-center gap-3 p-3 bg-white/5 border border-white/5"
+                                    >
+                                        <ImageIcon size={16} className="text-engine-orange shrink-0" />
+                                        <span className="text-xs font-mono truncate flex-1">
+                                            {file.name}
+                                        </span>
+                                        <span className="text-[9px] font-mono text-white/40 shrink-0">
+                                            {(file.size / 1024).toFixed(0)} KB
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Tag Selector */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest block">
+                                    Tag
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {ALL_TAGS.map((tag) => (
+                                        <button
+                                            key={tag}
+                                            onClick={() => setUploadTag(tag)}
+                                            className={`px-3 py-2 text-[9px] font-mono uppercase tracking-wider border transition-all ${uploadTag === tag
+                                                ? 'bg-engine-orange text-black border-engine-orange'
+                                                : 'bg-transparent text-white/60 border-white/10 hover:border-engine-orange'
+                                                }`}
+                                        >
+                                            {TAG_LABELS[tag]}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Label Input */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest block">
+                                    Label (optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={uploadLabel}
+                                    onChange={(e) => setUploadLabel(e.target.value)}
+                                    placeholder="e.g. Onboarding Screen 1"
+                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 text-sm font-mono placeholder:text-white/20 focus:border-engine-orange focus:outline-none transition-colors"
+                                />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => {
+                                        setShowUploadModal(false);
+                                        setPendingFiles([]);
+                                    }}
+                                    className="flex-1 px-4 py-3 border border-white/10 text-white/60 text-[10px] font-mono uppercase tracking-widest hover:bg-white/5 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleUpload}
+                                    disabled={uploading}
+                                    className="flex-1 btn-engine flex items-center justify-center gap-2 !py-3"
+                                >
+                                    {uploading ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-black/30 border-t-black animate-spin rounded-full" />
+                                            <span>Uploading...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check size={18} />
+                                            <span>
+                                                Upload {pendingFiles.length} File
+                                                {pendingFiles.length !== 1 ? 's' : ''}
+                                            </span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
 
             {/* Toast */}
-            {toast && (
-                <div
-                    className={`fixed bottom-8 right-8 z-[200] flex items-center gap-3 px-6 py-4 border text-sm font-mono transition-all animate-in ${toast.type === 'success'
-                        ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                        : 'bg-red-500/10 border-red-500/30 text-red-400'
-                        }`}
-                >
-                    {toast.type === 'success' ? (
-                        <Check size={16} />
-                    ) : (
-                        <AlertTriangle size={16} />
-                    )}
-                    {toast.message}
-                </div>
-            )}
-        </div>
+            {
+                toast && (
+                    <div
+                        className={`fixed bottom-8 right-8 z-[200] flex items-center gap-3 px-6 py-4 border text-sm font-mono transition-all animate-in ${toast.type === 'success'
+                            ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                            : 'bg-red-500/10 border-red-500/30 text-red-400'
+                            }`}
+                    >
+                        {toast.type === 'success' ? (
+                            <Check size={16} />
+                        ) : (
+                            <AlertTriangle size={16} />
+                        )}
+                        {toast.message}
+                    </div>
+                )
+            }
+        </div >
     );
 }

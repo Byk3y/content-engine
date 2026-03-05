@@ -116,8 +116,8 @@ export default function StepSendToTikTok({
             ) : (
                 /* ─── Send Form ──────────────────────────────── */
                 <>
-                    <div className="flex items-start justify-between">
-                        <div>
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
                             <h3 className="text-2xl mb-2">Send to Channels</h3>
                             <p className="text-white/40 font-mono text-xs">
                                 Review your caption, select one or more channels, and send your carousel.
