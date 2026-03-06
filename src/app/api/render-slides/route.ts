@@ -380,10 +380,6 @@ export async function POST(req: NextRequest) {
                 })
                 .composite([
                     {
-                        input: Buffer.from(`<svg><rect x="0" y="0" width="${WIDTH}" height="${HEIGHT}" fill="rgba(0,0,0,0.3)"/></svg>`),
-                        blend: 'over'
-                    },
-                    {
                         input: generateTextSvg(
                             slide.slide_number === 1 ? hookText : slide.text_overlay,
                             slide.slide_number === 1,
