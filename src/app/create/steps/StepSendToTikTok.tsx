@@ -165,6 +165,11 @@ export default function StepSendToTikTok({
                             className="w-full px-4 py-3 bg-white/5 border border-white/10 text-sm font-mono placeholder:text-white/15 focus:border-engine-orange focus:outline-none transition-colors resize-none leading-relaxed"
                             placeholder="Write your caption here..."
                         />
+                        <div className="flex justify-end">
+                            <span className={`text-[10px] font-mono uppercase tracking-widest ${caption.length > 2200 ? 'text-red-400' : 'text-white/30'}`}>
+                                {caption.length} / 2,200
+                            </span>
+                        </div>
                     </div>
 
                     {/* Channel Selector — Multi-select */}

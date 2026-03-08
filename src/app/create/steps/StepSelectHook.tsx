@@ -29,6 +29,24 @@ const ANGLE_OPTIONS = [
         emoji: '📚',
         description: 'Rank methods, share techniques. No AI images needed for most slides.',
     },
+    {
+        id: 'showcase',
+        label: 'Feature Showcase',
+        emoji: '🔥',
+        description: 'Walk through 5 Brigo features. Only 1 AI image needed.',
+    },
+    {
+        id: 'beforeafter',
+        label: 'Before / After',
+        emoji: '🔄',
+        description: 'Transformation story — struggle vs success with Brigo.',
+    },
+    {
+        id: 'pov',
+        label: 'POV Story',
+        emoji: '👀',
+        description: 'POV: You discovered AI studying. Immersive second-person format.',
+    },
 ];
 
 interface StepSelectHookProps {

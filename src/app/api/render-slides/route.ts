@@ -34,7 +34,6 @@ function generateTextSvg(text: string | null | undefined, isHook: boolean, image
         `);
     }
 
-    const isAI = imageSource === 'ai_generate';
     const MAX_TEXT_WIDTH = Math.floor(WIDTH * 0.75); // 75% of image width = 810px
     const CHAR_WIDTH_FACTOR = 0.55; // Bebas Neue is narrow
 
@@ -42,8 +41,8 @@ function generateTextSvg(text: string | null | undefined, isHook: boolean, image
     const capsText = text.trim().toUpperCase();
     const words = capsText.split(/\s+/);
 
-    // 2. Font size: 72px for AI slides, 56px for library slides
-    let fontSize = isAI ? 72 : 56;
+    // 2. Font size: 72px for hook slide, 44px for all other slides
+    let fontSize = isHook ? 72 : 44;
 
     // 3. Word wrapping (75% max width)
     function wrapText(size: number): string[] {
@@ -85,18 +84,8 @@ function generateTextSvg(text: string | null | undefined, isHook: boolean, image
     const longestLineWidth = longestLineChars * fontSize * CHAR_WIDTH_FACTOR;
     const pillWidth = Math.min(longestLineWidth + (paddingH * 2), MAX_TEXT_WIDTH + (paddingH * 2));
 
-    // 6. Vertical positioning
-    let pillY: number;
-    if (isAI) {
-        // Center for AI-generated slides (full bleed photos)
-        pillY = (HEIGHT - pillHeight) / 2;
-    } else if (assetTag === 'cta') {
-        // CTA slide: anchor pill 140px from the image bottom
-        pillY = HEIGHT - 140 - pillHeight;
-    } else {
-        // Anchor pill so its bottom edge is 80px from the image bottom
-        pillY = HEIGHT - 80 - pillHeight;
-    }
+    // 6. Vertical positioning — always center
+    const pillY = (HEIGHT - pillHeight) / 2;
 
     // Horizontally centre the pill on the canvas
     const pillX = (WIDTH - pillWidth) / 2;
@@ -120,20 +109,18 @@ function generateTextSvg(text: string | null | undefined, isHook: boolean, image
     >${line}</text>
   `).join('');
 
-    const isCta = assetTag === 'cta';
-
     return Buffer.from(`
     <svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
       <rect x="0" y="0" width="${WIDTH}" height="${HEIGHT}" fill="none" />
-      ${isCta ? '' : `<rect 
-        x="${pillX}" 
-        y="${pillY}" 
-        width="${pillWidth}" 
-        height="${pillHeight}" 
-        rx="${borderRadius}" 
-        ry="${borderRadius}" 
-        fill="rgba(0,0,0,0.55)" 
-      />`}
+      ${isHook ? `<rect
+        x="${pillX}"
+        y="${pillY}"
+        width="${pillWidth}"
+        height="${pillHeight}"
+        rx="${borderRadius}"
+        ry="${borderRadius}"
+        fill="rgba(0,0,0,0.55)"
+      />` : ''}
       ${textElements}
     </svg>
   `);

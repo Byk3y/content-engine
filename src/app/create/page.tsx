@@ -437,7 +437,7 @@ export default function CreatePostPage() {
                 <h2 className="text-3xl md:text-6xl mb-2">Create Post</h2>
                 <p className="text-engine-orange font-mono text-xs md:text-sm tracking-widest flex items-center gap-2">
                     <span className="w-2 h-2 bg-engine-orange rounded-full" />
-                    {selectedAngle === 'pet' ? 'PET EVOLUTION' : 'SKEPTIC STORY'} // 6-SLIDE CAROUSEL
+                    {{ pet: 'PET EVOLUTION', skeptic: 'SKEPTIC STORY', tips: 'STUDY TIPS', showcase: 'FEATURE SHOWCASE', beforeafter: 'BEFORE / AFTER', pov: 'POV STORY' }[selectedAngle] ?? selectedAngle.toUpperCase()} // 6-SLIDE CAROUSEL
                 </p>
             </header>
 
