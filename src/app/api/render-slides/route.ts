@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
+import satori from 'satori';
+import { join } from 'path';
+import { readFile } from 'fs/promises';
+
+let bebasFont: ArrayBuffer | Buffer | null = null;
+let interFont: ArrayBuffer | Buffer | null = null;
+
+async function loadFonts() {
+    if (!bebasFont) {
+        bebasFont = await readFile(join(process.cwd(), 'public/fonts/BebasNeue-Regular.ttf'));
+    }
+    if (!interFont) {
+        interFont = await readFile(join(process.cwd(), 'public/fonts/inter-latin-600-normal.woff'));
+    }
+}
 
 // Use the legacy JWT anon key for storage operations (publishable keys don't support storage)
 const supabaseStorage = createClient(
@@ -25,7 +40,32 @@ async function getBufferFromUrl(url: string): Promise<Buffer> {
     return Buffer.from(arrayBuffer);
 }
 
-function generateTextSvg(text: string | null | undefined, isHook: boolean, imageSource: string, assetTag?: string) {
+async function uploadWithRetry(fileName: string, buffer: Buffer, retries = 3) {
+    let lastError: any = null;
+    // Next.js fetch polyfill handles native ArrayBuffers better than Node Buffers under concurrency
+    const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const { error } = await supabaseStorage.storage
+                .from('content-assets')
+                .upload(fileName, arrayBuffer, {
+                    contentType: 'image/jpeg',
+                    upsert: true
+                });
+            if (!error) return { error: null };
+            lastError = error;
+            console.warn(`[render-slides] ⚠️ Upload attempt ${attempt} failed for ${fileName}:`, error.message);
+        } catch (err: any) {
+            lastError = err;
+            console.warn(`[render-slides] ⚠️ Upload attempt ${attempt} threw for ${fileName}:`, err.message);
+        }
+        if (attempt < retries) await new Promise(r => setTimeout(r, 1000 * attempt));
+    }
+    return { error: lastError };
+}
+
+async function generateTextSvg(text: string | null | undefined, isHook: boolean, imageSource: string, assetTag?: string) {
     if (!text || text.trim() === '') {
         return Buffer.from(`
             <svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
@@ -34,17 +74,19 @@ function generateTextSvg(text: string | null | undefined, isHook: boolean, image
         `);
     }
 
-    const MAX_TEXT_WIDTH = Math.floor(WIDTH * 0.75); // 75% of image width = 810px
-    const CHAR_WIDTH_FACTOR = 0.55; // Bebas Neue is narrow
+    await loadFonts();
 
     // 1. ALL CAPS
     const capsText = text.trim().toUpperCase();
     const words = capsText.split(/\s+/);
 
-    // 2. Font size: 72px for hook slide, 44px for all other slides
-    let fontSize = isHook ? 72 : 44;
+    // 2. Font size: 100px for hook slide, 80px for all other slides
+    let fontSize = isHook ? 100 : 80;
 
-    // 3. Word wrapping (75% max width)
+    // 3. Word wrapping (88% max width)
+    const MAX_TEXT_WIDTH = Math.floor(WIDTH * 0.88); // 88% of image width = 950px
+    const CHAR_WIDTH_FACTOR = 0.55; // Bebas Neue is narrow
+
     function wrapText(size: number): string[] {
         const charWidth = size * CHAR_WIDTH_FACTOR;
         const maxChars = Math.floor(MAX_TEXT_WIDTH / charWidth);
@@ -65,174 +107,194 @@ function generateTextSvg(text: string | null | undefined, isHook: boolean, image
 
     let lines = wrapText(fontSize);
 
-    // 4. Auto-shrink: if more than 2 lines, reduce font size by 10px and re-wrap
-    if (lines.length > 2) {
-        fontSize -= 10;
+    // 4. Auto-shrink: if more than 3 lines, reduce font size by 8px and re-wrap
+    while (lines.length > 3 && fontSize > 40) {
+        fontSize -= 8;
         lines = wrapText(fontSize);
     }
 
-    // 5. Measurements for pill background
-    const lineHeight = fontSize * 1.3;
-    const totalTextHeight = lines.length * lineHeight;
-    const paddingH = 32; // 32px horizontal padding inside pill
-    const paddingV = 14; // vertical padding
-    const pillHeight = totalTextHeight + (paddingV * 2);
-    const borderRadius = 24;
+    const paddingH = 36;
+    const paddingV = 20;
+    const mt = assetTag === 'cta' ? 340 : 0;
 
-    // Pill width wraps to the longest line, not the full max width
-    const longestLineChars = Math.max(...lines.map(l => l.length));
-    const longestLineWidth = longestLineChars * fontSize * CHAR_WIDTH_FACTOR;
-    const pillWidth = Math.min(longestLineWidth + (paddingH * 2), MAX_TEXT_WIDTH + (paddingH * 2));
+    const svg = await satori(
+        {
+            type: 'div',
+            props: {
+                style: {
+                    display: 'flex',
+                    width: '100%',
+                    height: '100%',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                },
+                children: {
+                    type: 'div',
+                    props: {
+                        style: {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: isHook ? 'rgba(0,0,0,0.55)' : 'transparent',
+                            borderRadius: '24px',
+                            padding: `${paddingV}px ${paddingH}px`,
+                            marginTop: `${mt}px`,
+                        },
+                        children: lines.map((line) => ({
+                            type: 'span',
+                            props: {
+                                style: {
+                                    fontFamily: '"Bebas Neue"',
+                                    fontSize: fontSize,
+                                    lineHeight: '1.3',
+                                    fontWeight: 400,
+                                    color: '#FFFFFF',
+                                    textShadow: '0px 3px 6px rgba(0,0,0,0.6)',
+                                    WebkitTextStroke: '4px #000000',
+                                    paintOrder: 'stroke',
+                                },
+                                children: line
+                            }
+                        }))
+                    }
+                }
+            },
+        } as any,
+        {
+            width: WIDTH,
+            height: HEIGHT,
+            fonts: [
+                {
+                    name: 'Bebas Neue',
+                    data: bebasFont as ArrayBuffer,
+                    weight: 400,
+                    style: 'normal',
+                }
+            ]
+        }
+    );
 
-    // 6. Vertical positioning — always center
-    const pillY = (HEIGHT - pillHeight) / 2;
-
-    // Horizontally centre the pill on the canvas
-    const pillX = (WIDTH - pillWidth) / 2;
-    const textStartY = pillY + paddingV;
-
-    // 7. Build SVG
-    const textElements = lines.map((line, i) => `
-    <text 
-      x="50%" 
-      y="${textStartY + (i * lineHeight) + fontSize}" 
-      text-anchor="middle" 
-      fill="#FFFFFF" 
-      font-family="'Bebas Neue', 'Arial Black', Impact, sans-serif" 
-      font-weight="bold" 
-      font-size="${fontSize}px"
-      stroke="#000000"
-      stroke-width="4"
-      stroke-linejoin="round"
-      paint-order="stroke"
-      style="filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.6));"
-    >${line}</text>
-  `).join('');
-
-    return Buffer.from(`
-    <svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
-      <rect x="0" y="0" width="${WIDTH}" height="${HEIGHT}" fill="none" />
-      ${isHook ? `<rect
-        x="${pillX}"
-        y="${pillY}"
-        width="${pillWidth}"
-        height="${pillHeight}"
-        rx="${borderRadius}"
-        ry="${borderRadius}"
-        fill="rgba(0,0,0,0.55)"
-      />` : ''}
-      ${textElements}
-    </svg>
-  `);
+    return Buffer.from(svg);
 }
 
-function generateTipsCardSvg(rating: string, methodName: string, subtext: string) {
-    const CHAR_WIDTH_NARROW = 0.55; // Bebas Neue narrow chars
-    const CHAR_WIDTH_NORMAL = 0.5; // Arial normal chars
+async function generateTipsCardSvg(rating: string, methodName: string, subtext: string) {
+    await loadFonts();
 
-    // Escape XML special characters
-    const escXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-    // Layer 1 — Rating (orange, 120px, at 35% from top)
     const ratingText = rating.toUpperCase();
-    const ratingFontSize = 120;
-    const ratingY = Math.floor(HEIGHT * 0.35);
-
-    // Layer 2 — Method name (white, adaptive font size, word-wrapped at 80% width)
     const methodText = methodName.toUpperCase();
-    const methodMaxWidth = Math.floor(WIDTH * 0.80); // 864px on 1080 canvas
 
-    // Adaptive font size based on character count
-    let methodFontSize = 88;
+    let methodFontSize = 110;
     if (methodText.length > 20) {
-        methodFontSize = 56;
+        methodFontSize = 76;
     } else if (methodText.length > 14) {
-        methodFontSize = 68;
+        methodFontSize = 90;
     }
 
-    // Word-wrap method name at max width
-    const methodCharWidth = methodFontSize * CHAR_WIDTH_NARROW;
-    const methodMaxChars = Math.floor(methodMaxWidth / methodCharWidth);
-    const methodWords = methodText.split(/\s+/);
-    const methodLines: string[] = [];
-    let methodCurrentLine = '';
-    methodWords.forEach(word => {
-        if (methodCurrentLine.length > 0 && (methodCurrentLine + ' ' + word).length > methodMaxChars) {
-            methodLines.push(methodCurrentLine);
-            methodCurrentLine = word;
-        } else {
-            methodCurrentLine = methodCurrentLine.length > 0 ? methodCurrentLine + ' ' + word : word;
+    const ratingY = Math.floor(HEIGHT * 0.33);
+
+    const svg = await satori(
+        {
+            type: 'div',
+            props: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '100%',
+                    paddingTop: `${ratingY}px`,
+                },
+                children: [
+                    {
+                        type: 'span',
+                        props: {
+                            style: {
+                                fontFamily: '"Bebas Neue"',
+                                fontSize: 160,
+                                fontWeight: 400,
+                                color: '#FF6B35',
+                                lineHeight: '1',
+                            },
+                            children: ratingText
+                        }
+                    },
+                    {
+                        type: 'div',
+                        props: {
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                marginTop: '70px',
+                                maxWidth: '864px',
+                            },
+                            children: {
+                                type: 'span',
+                                props: {
+                                    style: {
+                                        fontFamily: '"Bebas Neue"',
+                                        fontSize: methodFontSize,
+                                        fontWeight: 400,
+                                        color: '#FFFFFF',
+                                        textAlign: 'center',
+                                        lineHeight: '1.2',
+                                    },
+                                    children: methodText
+                                }
+                            }
+                        }
+                    },
+                    {
+                        type: 'div',
+                        props: {
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                marginTop: '60px',
+                                maxWidth: '850px',
+                            },
+                            children: {
+                                type: 'span',
+                                props: {
+                                    style: {
+                                        fontFamily: '"Inter"',
+                                        fontSize: 52,
+                                        fontWeight: 600,
+                                        color: '#AAAAAA',
+                                        textAlign: 'center',
+                                        lineHeight: '1.4',
+                                    },
+                                    children: subtext
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        } as any,
+        {
+            width: WIDTH,
+            height: HEIGHT,
+            fonts: [
+                {
+                    name: 'Bebas Neue',
+                    data: bebasFont as ArrayBuffer,
+                    weight: 400,
+                    style: 'normal',
+                },
+                {
+                    name: 'Inter',
+                    data: interFont as ArrayBuffer,
+                    weight: 600,
+                    style: 'normal',
+                }
+            ],
         }
-    });
-    if (methodCurrentLine) methodLines.push(methodCurrentLine);
+    );
 
-    const methodLineHeight = methodFontSize * 1.2;
-    const methodBlockHeight = methodLines.length * methodLineHeight;
-    // Centre the method block in the same area (60px below rating baseline)
-    const methodBlockTopY = ratingY + ratingFontSize + 60;
-
-    const methodElements = methodLines.map((line, i) => `
-    <text
-      x="50%"
-      y="${methodBlockTopY + (i * methodLineHeight) + methodFontSize}"
-      text-anchor="middle"
-      fill="#FFFFFF"
-      font-family="'Bebas Neue', 'Arial Black', Impact, sans-serif"
-      font-weight="bold"
-      font-size="${methodFontSize}px"
-    >${escXml(line)}</text>
-  `).join('');
-
-    // Layer 3 — Subtext (grey, 38px, 50px below method block bottom)
-    const subtextFontSize = 38;
-    const subtextMaxWidth = Math.floor(WIDTH * 0.75);
-    const subtextCharWidth = subtextFontSize * CHAR_WIDTH_NORMAL;
-    const subtextMaxChars = Math.floor(subtextMaxWidth / subtextCharWidth);
-    const subtextWords = subtext.split(/\s+/);
-    const subtextLines: string[] = [];
-    let currentLine = '';
-    subtextWords.forEach(word => {
-        if (currentLine.length > 0 && (currentLine + ' ' + word).length > subtextMaxChars) {
-            subtextLines.push(currentLine);
-            currentLine = word;
-        } else {
-            currentLine = currentLine.length > 0 ? currentLine + ' ' + word : word;
-        }
-    });
-    if (currentLine) subtextLines.push(currentLine);
-
-    // Subtext starts 50px below the bottom of the method block
-    const subtextStartY = methodBlockTopY + methodBlockHeight + 50;
-    const subtextLineHeight = subtextFontSize * 1.4;
-
-    const subtextElements = subtextLines.map((line, i) => `
-    <text
-      x="50%"
-      y="${subtextStartY + (i * subtextLineHeight) + subtextFontSize}"
-      text-anchor="middle"
-      fill="#AAAAAA"
-      font-family="Arial, 'Helvetica Neue', sans-serif"
-      font-weight="bold"
-      font-size="${subtextFontSize}px"
-    >${escXml(line)}</text>
-  `).join('');
-
-    return Buffer.from(`
-    <svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
-      <rect x="0" y="0" width="${WIDTH}" height="${HEIGHT}" fill="none" />
-      <text
-        x="50%"
-        y="${ratingY + ratingFontSize}"
-        text-anchor="middle"
-        fill="#FF6B35"
-        font-family="'Bebas Neue', 'Arial Black', Impact, sans-serif"
-        font-weight="bold"
-        font-size="${ratingFontSize}px"
-      >${escXml(ratingText)}</text>
-      ${methodElements}
-      ${subtextElements}
-    </svg>
-  `);
+    return Buffer.from(svg);
 }
 
 export async function POST(req: NextRequest) {
@@ -280,7 +342,7 @@ export async function POST(req: NextRequest) {
                     .toBuffer();
 
                 // Composite the three-layer tips card SVG
-                const tipsOverlay = generateTipsCardSvg(
+                const tipsOverlay = await generateTipsCardSvg(
                     slide.rating || '?/10',
                     slide.text_overlay || 'METHOD',
                     slide.subtext || ''
@@ -295,13 +357,11 @@ export async function POST(req: NextRequest) {
                 const fileName = `rendered/${batchId}/slide-${slide.slide_number}.jpg`;
                 console.log(`[render-slides] Uploading tips_card slide ${slide.slide_number} → ${fileName} (${processed.length} bytes)`);
 
-                const { error: uploadError } = await supabaseStorage.storage
-                    .from('content-assets')
-                    .upload(fileName, processed, { contentType: 'image/jpeg', upsert: true });
+                const { error: uploadError } = await uploadWithRetry(fileName, processed);
 
                 if (uploadError) {
-                    console.error(`[render-slides] ❌ Upload failed for slide ${slide.slide_number}:`, uploadError.message);
-                    throw new Error(`Storage upload failed for slide ${slide.slide_number}: ${uploadError.message}`);
+                    console.error(`[render-slides] ❌ Upload failed for slide ${slide.slide_number} after retries:`, uploadError?.message || uploadError);
+                    throw new Error(`Storage upload failed for slide ${slide.slide_number}: ${uploadError?.message || uploadError}`);
                 }
 
                 const { data: publicUrlData } = supabaseStorage.storage
@@ -367,7 +427,7 @@ export async function POST(req: NextRequest) {
                 })
                 .composite([
                     {
-                        input: generateTextSvg(
+                        input: await generateTextSvg(
                             slide.slide_number === 1 ? hookText : slide.text_overlay,
                             slide.slide_number === 1,
                             slide.image_source,
@@ -384,16 +444,11 @@ export async function POST(req: NextRequest) {
 
             console.log(`[render-slides] Uploading slide ${slide.slide_number} → ${fileName} (${processed.length} bytes)`);
 
-            const { error: uploadError } = await supabaseStorage.storage
-                .from('content-assets')
-                .upload(fileName, processed, {
-                    contentType: 'image/jpeg',
-                    upsert: true
-                });
+            const { error: uploadError } = await uploadWithRetry(fileName, processed);
 
             if (uploadError) {
-                console.error(`[render-slides] ❌ Upload failed for slide ${slide.slide_number}:`, uploadError.message);
-                throw new Error(`Storage upload failed for slide ${slide.slide_number}: ${uploadError.message}`);
+                console.error(`[render-slides] ❌ Upload failed for slide ${slide.slide_number} after retries:`, uploadError?.message || uploadError);
+                throw new Error(`Storage upload failed for slide ${slide.slide_number}: ${uploadError?.message || uploadError}`);
             }
 
             const { data: publicUrlData } = supabaseStorage.storage
